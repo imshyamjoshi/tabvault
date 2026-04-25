@@ -74,13 +74,24 @@ Build time: 1.57s ✓
 
 ---
 
-## Day 2 — (upcoming) Save & Restore Sessions
-Full flow testing with real Chrome extension load.
+## Days 2–4 — Code Review & Bug Fixes
+**Date:** 2026-04-25
+**Status:** Complete ✓
 
-## Day 3 — (upcoming) Trial System
-Simulate trial states manually.
+All Days 2–4 features were scaffolded in Day 1. This pass fixed 3 rule violations found during review:
 
-## Day 4 — (upcoming) Folders & Reminders
+### Bugs fixed
+1. **`license.js`** — was making `fetch` directly from popup context, violating AI_RULES "no network requests from popup". Fixed by moving the Gumroad API call to `background.js` via `chrome.runtime.sendMessage({ type: 'VALIDATE_LICENSE' })`.
+
+2. **`SettingsScreen.jsx`** — used `alert()` 3 times, violating AI_RULES "never use alert()". Fixed by adding a local `notice` state that renders an inline timed message (auto-clears after 3s).
+
+3. **`usePaywall.js`** — used incorrect `window.ExtensionPay?.(key)` pattern. Fixed to use message-based `CHECK_PAYMENT` via background.js (stub until Day 5 keys are added).
+
+### background.js message handlers added
+- `VALIDATE_LICENSE` — POSTs to Gumroad API, sets `isPaid` in storage on success
+- `CHECK_PAYMENT` — reads local `isPaid` cache (ExtensionPay wired on Day 5)
+- `RESTORE_PURCHASE` — reads local `isPaid` cache
+- `OPEN_PAYMENT_PAGE` — stub for ExtensionPay (Day 5)
 
 ## Day 5 — (upcoming) Payments
 Requires: `VITE_EXTENSIONPAY_KEY` and `VITE_GUMROAD_PRODUCT_PERMALINK` from user.
