@@ -93,8 +93,17 @@ All Days 2–4 features were scaffolded in Day 1. This pass fixed 3 rule violati
 - `RESTORE_PURCHASE` — reads local `isPaid` cache
 - `OPEN_PAYMENT_PAGE` — stub for ExtensionPay (Day 5)
 
-## Day 5 — (upcoming) Payments
-Requires: `VITE_EXTENSIONPAY_KEY` and `VITE_GUMROAD_PRODUCT_PERMALINK` from user.
+## Day 5 — Payments
+**Date:** 2026-04-25
+**Status:** Complete ✓
+
+- ExtPay key: `tabvaultwithai` | Gumroad permalink: `bxiocl`
+- Downloaded `ExtPay.js` (UMD) to `public/` — Vite copies it to `dist/` as-is
+- `background.js`: `importScripts('ExtPay.js')` at top, `ExtPay('tabvaultwithai')` init, `extpay.startBackground()` called
+- `CHECK_PAYMENT` and `RESTORE_PURCHASE` handlers call `extpay.getUser()` with local cache fallback
+- `OPEN_PAYMENT_PAGE` calls `extpay.openPaymentPage()`
+- `VALIDATE_LICENSE` posts to Gumroad API with permalink `bxiocl`
+- `.env` updated with both keys (gitignored)
 
 ## Day 6 — (upcoming) Polish, Search, Export
 
