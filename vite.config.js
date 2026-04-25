@@ -4,12 +4,13 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  base: '',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, 'src/popup/index.html'),
+        popup: resolve(__dirname, 'popup.html'),
         background: resolve(__dirname, 'background.js'),
       },
       output: {
