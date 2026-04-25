@@ -1,0 +1,90 @@
+# TabVault — Dev Log
+
+---
+
+## Day 1 — Project Setup & Full Scaffold
+**Date:** 2026-04-25
+**Status:** Complete ✓
+
+### What was done
+- Initialized git repository
+- Created `package.json` with React 18, Vite 5, Tailwind 3, uuid
+- Created `vite.config.js` configured for Chrome Extension (dual entry: popup + background)
+- Created `tailwind.config.js` with dark mode via `class`, minimalist zinc palette
+- Created `postcss.config.js`
+- Created `manifest.json` (Manifest V3) — permissions: tabs, storage, alarms, notifications
+- Created `.gitignore` and `.env.example`
+
+### Source files created
+
+**background.js (root)**
+- Sets `installDate` on first install
+- Handles `chrome.alarms.onAlarm` → fires Chrome notification with session name
+- Handles `chrome.notifications.onClicked` → opens all session tabs in new window
+- Clears reminder from session after firing
+
+**src/popup/index.html** — popup HTML entry point
+**src/popup/main.jsx** — React root, applies dark class based on system preference
+**src/popup/App.jsx** — root component wiring all hooks and screens together
+
+**src/utils/**
+- `storage.js` — `storageGet` / `storageSet` wrappers around `chrome.storage.local`
+- `session.js` — `createSession()`, `isValidSession()`, `formatDate()` helpers
+- `trial.js` — `initTrial()`, `getTrialStatus()` → returns `{ inTrial, daysRemaining, trialExpired }`
+- `pricing.js` — `PRICING` constants for INR and USD (monthly/yearly/lifetime)
+- `license.js` — `validateGumroadKey()` → POST to Gumroad API, sets `isPaid` on success
+
+**src/hooks/**
+- `useSessions.js` — load/save/delete/restore/update sessions in chrome.storage; creates alarms on reminder set
+- `useTrial.js` — calls `getTrialStatus()` on mount, returns trial state
+- `usePaywall.js` — checks ExtensionPay on mount, falls back to local `isPaid` cache
+- `useFolders.js` — CRUD for folder list in chrome.storage
+- `useSearch.js` — filters sessions by active folder + search query (memoized)
+
+**src/components/**
+- `TrialBanner.jsx` — yellow (days 5-6) / orange (day 7) banner, hidden days 1-4
+- `SearchBar.jsx` — enabled for trial/paid, greyed-out with "Pro" badge for free users
+- `FolderTabs.jsx` — pill tab bar, inline folder creation, gated for free users
+- `SaveModal.jsx` — bottom sheet, auto-generates session name, folder picker (pro-gated)
+- `ReminderPicker.jsx` — bottom sheet date/time picker, remove option
+- `SessionCard.jsx` — expandable card: tab list, restore/rename/remind/export/delete actions; locked state for free tier overflow
+- `SessionList.jsx` — skeleton loader, empty state, free tier lock at 3 sessions
+- `UpgradeModal.jsx` — 3-plan grid (Monthly/Yearly/Lifetime), Gumroad license key input
+- `SettingsScreen.jsx` — account status, manage subscription, restore purchase
+
+### Design decisions
+- Minimalist zinc palette (Tailwind zinc scale)
+- System-aware dark/light mode (reads `prefers-color-scheme` on mount)
+- Popup fixed at 380×520px per spec
+- Dark mode via Tailwind `darkMode: 'class'`
+
+### Known gaps (will be addressed)
+- ExtensionPay integration deferred to Day 5 (need API key from user)
+- Gumroad permalink deferred to Day 5
+- Icons not yet created (placeholder paths in manifest)
+- No GitHub remote yet — add after user provides repo name
+
+### Build output
+```
+dist/background.js       0.97 kB
+dist/popup.js          167.23 kB
+dist/assets/popup.css   18.05 kB
+Build time: 1.57s ✓
+```
+
+---
+
+## Day 2 — (upcoming) Save & Restore Sessions
+Full flow testing with real Chrome extension load.
+
+## Day 3 — (upcoming) Trial System
+Simulate trial states manually.
+
+## Day 4 — (upcoming) Folders & Reminders
+
+## Day 5 — (upcoming) Payments
+Requires: `VITE_EXTENSIONPAY_KEY` and `VITE_GUMROAD_PRODUCT_PERMALINK` from user.
+
+## Day 6 — (upcoming) Polish, Search, Export
+
+## Day 7 — (upcoming) Chrome Web Store Submission
