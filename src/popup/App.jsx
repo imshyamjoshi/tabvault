@@ -36,13 +36,18 @@ export default function App() {
 
   if (screen === 'settings') {
     return (
-      <SettingsScreen
-        isPaid={isPaid}
-        inTrial={inTrial}
-        daysRemaining={daysRemaining}
-        onBack={() => setScreen('main')}
-        onUpgrade={() => setShowUpgrade(true)}
-      />
+      <div className="relative h-full">
+        <SettingsScreen
+          isPaid={isPaid}
+          inTrial={inTrial}
+          daysRemaining={daysRemaining}
+          onBack={() => setScreen('main')}
+          onUpgrade={() => setShowUpgrade(true)}
+        />
+        {showUpgrade && (
+          <UpgradeModal onClose={() => setShowUpgrade(false)} />
+        )}
+      </div>
     )
   }
 
