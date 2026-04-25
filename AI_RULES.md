@@ -71,22 +71,20 @@
 
 ## 6. Payment Rules
 
-- **ExtensionPay** handles Monthly and Yearly subscriptions.
-- **Gumroad** license key handles Lifetime access — validated via `src/utils/license.js`.
+- **ExtensionPay** handles ALL plans — Monthly, Yearly, and Lifetime.
+- Never use Gumroad or any other payment provider — ExtensionPay only.
 - Never hardcode prices in components — always import from `src/utils/pricing.js`.
 - Pricing constants:
   ```js
-  // India
-  INR_MONTHLY = 149
-  INR_YEARLY = 999
-  INR_LIFETIME = 799
-  // Global
-  USD_MONTHLY = 1.99
-  USD_YEARLY = 11.99
-  USD_LIFETIME = 9.99
+  // USD only — ExtensionPay handles currency display
+  USD_MONTHLY = 0.99
+  USD_YEARLY = 5.99
+  USD_LIFETIME = 4.99
   ```
+- Paid status check is always: `extpay.getUser().then(user => user.paid)`
+- This single check covers ALL plan types — monthly, yearly, lifetime.
 - Never expose any secret keys in frontend code.
-- ExtensionPay public key lives in `.env` as `VITE_EXTENSIONPAY_KEY`.
+- ExtensionPay key (your Chrome Extension ID) lives in `.env` as `VITE_EXTENSIONPAY_KEY`.
 
 ---
 
@@ -128,3 +126,5 @@
 - Never make network requests from the popup — only from background.js.
 - Never generate placeholder or lorem ipsum content in production code.
 - Never create files outside the defined folder structure without asking first.
+- Never use Gumroad or any payment provider other than ExtensionPay.
+- Never create a `license.js` file — license key validation is not needed, ExtensionPay handles everything.

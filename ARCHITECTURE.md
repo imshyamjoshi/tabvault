@@ -49,7 +49,7 @@ tabvault/
 │   │   ├── SaveModal.jsx      # Save session name + folder picker
 │   │   ├── FolderTabs.jsx     # Folder tab navigation
 │   │   ├── ReminderPicker.jsx # Date/time picker for reminders
-│   │   ├── UpgradeModal.jsx   # Paywall — 3 plans + Gumroad key
+│   │   ├── UpgradeModal.jsx   # Paywall — 3 plans all via ExtensionPay
 │   │   ├── TrialBanner.jsx    # Trial countdown banner
 │   │   ├── SearchBar.jsx      # Session search input
 │   │   └── SettingsScreen.jsx # Account, subscription status
@@ -62,10 +62,9 @@ tabvault/
 │   └── utils/
 │       ├── storage.js         # chrome.storage read/write helpers
 │       ├── trial.js           # Trial date logic
-│       ├── license.js         # Gumroad license key validation
-│       ├── pricing.js         # Pricing constants (INR + USD)
+│       ├── pricing.js         # Pricing constants (USD)
 │       └── session.js         # Session shape, validation, uuid gen
-├── .env                       # VITE_EXTENSIONPAY_KEY
+├── .env                       # VITE_EXTENSIONPAY_KEY (your Chrome Extension ID)
 ├── vite.config.js             # Vite + Chrome extension build config
 ├── tailwind.config.js
 └── package.json
@@ -101,7 +100,7 @@ tabvault/
   installDate: string,         // ISO date, set on first install
   isPaid: boolean,             // local cache of paid status
   paidSince: string | null,    // ISO date of upgrade
-  licenseKey: string | null,   // Gumroad key if lifetime user
+  planType: string | null,     // 'monthly' | 'yearly' | 'lifetime'
   trialNotified: {             // which trial banners have been shown
     day5: boolean,
     day6: boolean,
@@ -159,13 +158,15 @@ User sets reminder on a session
   → User clicks notification → background.js opens all tabs from session
 ```
 
-### 4.5 Gumroad Lifetime Key Flow
+### 4.5 Lifetime Payment Flow
 ```
-User enters license key in UpgradeModal
-  → license.js sends key to Gumroad API for validation
-  → If valid → isPaid = true, licenseKey saved to storage
-  → UpgradeModal closes, all features unlocked
-  → If invalid → show error "Invalid license key"
+User clicks "Lifetime" plan in UpgradeModal
+  → ExtensionPay.openPaymentPage() called with lifetime plan
+  → User completes one-time payment in ExtensionPay checkout
+  → ExtensionPay sets user.paid = true on their backend
+  → usePaywall hook detects user.paid === true on next check
+  → isPaid = true saved to storage, all features unlocked
+  → UpgradeModal closes automatically
 ```
 
 ---
@@ -205,14 +206,11 @@ User enters license key in UpgradeModal
 ### ExtensionPay
 - SDK loaded via npm: `extensionpay`
 - Called in `usePaywall.js` on every popup open
-- Handles Monthly + Yearly subscription billing
+- Handles all 3 plans: Monthly, Yearly, and Lifetime (one-time)
+- `extpay.getUser()` returns `{ paid: true/false }` — same check for all plan types
+- `extpay.openPaymentPage()` opens checkout for the selected plan
 - Dashboard at extensionpay.com
-
-### Gumroad License Validation
-- REST call to `https://api.gumroad.com/v2/licenses/verify`
-- Requires `product_permalink` + `license_key` in POST body
-- Returns `{ success: true/false, purchase: {...} }`
-- Handled in `src/utils/license.js`
+- Payouts via Stripe — connect your Stripe account in ExtensionPay dashboard
 
 ---
 
@@ -260,9 +258,10 @@ export default defineConfig({
 
 ```env
 # .env
-VITE_EXTENSIONPAY_KEY=your_extensionpay_public_key
-VITE_GUMROAD_PRODUCT_PERMALINK=your_gumroad_product_slug
+VITE_EXTENSIONPAY_KEY=your_chrome_extension_id
 ```
+
+> Note: The ExtensionPay "key" is simply your Chrome Extension ID. You get this from chrome://extensions after loading your unpacked extension on Day 1.
 
 ---
 
@@ -270,6 +269,6 @@ VITE_GUMROAD_PRODUCT_PERMALINK=your_gumroad_product_slug
 
 - No API keys in frontend code — only public keys via `.env`.
 - `.env` is in `.gitignore` — never commit it.
-- Gumroad validation happens client-side only in v1 — acceptable for low-stakes licensing. Server-side validation is a v2 improvement.
+- ExtensionPay handles all payment security and validation on their backend.
 - No user PII is collected or transmitted.
-- All data stays in `chrome.storage.local` — never leaves the user's browser except for payment verification calls.
+- All data stays in `chrome.storage.local` — never leaves the user's browser except for ExtensionPay verification calls.

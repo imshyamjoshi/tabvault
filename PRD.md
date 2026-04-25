@@ -112,20 +112,23 @@
 
 ### 6.8 Paywall & Upgrade
 - Upgrade modal shows 3 plans side by side.
-- Monthly and Yearly handled by ExtensionPay.
-- Lifetime handled by Gumroad license key input.
-- On valid payment/key: `isPaid = true` stored, all features unlocked.
+- All 3 plans (Monthly, Yearly, Lifetime) handled entirely by ExtensionPay.
+- `extpay.getUser().paid` is the single source of truth for access — works for all plan types.
+- `extpay.openPaymentPage()` opens ExtensionPay checkout for selected plan.
+- On successful payment: ExtensionPay sets paid status, `usePaywall` hook detects it, all features unlock.
 - Upgrade prompt triggered by: hitting free limit, clicking trial banner CTA, settings screen.
 
 ---
 
 ## 7. Pricing
 
-| Plan | India | Global |
-|---|---|---|
-| Monthly | ₹149/mo | $1.99/mo |
-| Yearly | ₹999/yr | $11.99/yr |
-| Lifetime | ₹799 one-time | $9.99 one-time |
+| Plan | Launch Price | Later Price | Type |
+|---|---|---|---|
+| Monthly | $0.99/mo | $1.99/mo | Subscription |
+| Yearly | $5.99/yr | $11.99/yr | Subscription |
+| Lifetime | $4.99 one-time | $9.99 one-time | One-time |
+
+All plans handled by **ExtensionPay**. USD only — ExtensionPay handles currency conversion for international buyers. Prices can be updated anytime from the ExtensionPay dashboard without any code changes.
 
 ---
 

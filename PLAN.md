@@ -13,8 +13,8 @@
 ## Pre-Build Checklist (Before Day 1)
 
 - [ ] Create Chrome Web Store developer account — $5 one-time at chrome.google.com/webstore/devconsole
-- [ ] Create ExtensionPay account — free at extensionpay.com
-- [ ] Create Gumroad account — free at gumroad.com, set up product, get permalink
+- [ ] Create ExtensionPay account — free at extensionpay.com (set up plans after Day 1 when you have your Extension ID)
+- [ ] Create Stripe account — free at stripe.com (connect to ExtensionPay on Day 5)
 - [ ] Install Node.js (v18+) and npm
 - [ ] Install VS Code or Cursor (recommended for AI-assisted coding)
 - [ ] Have a name and simple icon idea ready (can be refined later)
@@ -118,26 +118,24 @@ Paid users can assign sessions to folders and set reminders. Free users see lock
 
 ---
 
-## Day 5 — Payments (ExtensionPay + Gumroad)
+## Day 5 — Payments (ExtensionPay only)
 
-**Goal:** Real payments working end to end.
+**Goal:** Real payments working end to end for all 3 plans.
 
 ### Tasks
-- [ ] Set up ExtensionPay product with Monthly + Yearly plans at extensionpay.com
-- [ ] Add `VITE_EXTENSIONPAY_KEY` to `.env`
+- [ ] Register your Chrome Extension ID on ExtensionPay dashboard at extensionpay.com
+- [ ] Set up 3 plans in ExtensionPay: Monthly ($0.99), Yearly ($5.99), Lifetime ($4.99 one-time)
+- [ ] Connect your Stripe account to ExtensionPay for payouts
+- [ ] Add `VITE_EXTENSIONPAY_KEY` (your extension ID) to `.env`
 - [ ] Create `src/hooks/usePaywall.js`
-  - Calls `ExtensionPay.getUser()` on popup open
-  - Returns `isPaid` boolean
-  - Caches result in chrome.storage as fallback
-- [ ] Create `src/utils/license.js`
-  - `validateGumroadKey(key)` — POST to Gumroad API
-  - Returns `true/false`
-  - On success → sets `isPaid = true` in storage
+  - Calls `extpay.getUser()` on popup open
+  - Returns `isPaid` boolean — same check for all plan types
+  - Caches result in chrome.storage as fallback if ExtensionPay is unreachable
 - [ ] Create `src/components/UpgradeModal.jsx`
   - 3 plan cards: Monthly / Yearly / Lifetime
-  - Monthly + Yearly → ExtensionPay payment button
-  - Lifetime → Gumroad license key input field + validate button
-  - Shows INR and USD prices
+  - Each card has a button that calls `extpay.openPaymentPage()`
+  - Shows USD prices with early bird note
+  - No license key input needed — ExtensionPay handles everything
 - [ ] Wire upgrade modal trigger points:
   - Free limit hit
   - Trial banner CTA
@@ -145,7 +143,7 @@ Paid users can assign sessions to folders and set reminders. Free users see lock
 - [ ] Test full payment flow in ExtensionPay test mode
 
 ### Done when
-Clicking upgrade opens the modal. Monthly/Yearly payment flow works in test mode. Gumroad key validates and unlocks features.
+Clicking upgrade opens ExtensionPay checkout. Payment completes. Features unlock automatically on next popup open.
 
 ---
 
@@ -235,6 +233,6 @@ Extension submitted. Gumroad product live. Waiting for Chrome review.
 | chrome.storage.local | Save session data |
 | chrome.alarms API | Schedule reminders |
 | chrome.notifications API | Fire reminder alerts |
-| ExtensionPay | Monthly + Yearly subscriptions |
-| Gumroad | Lifetime license key sales |
+| ExtensionPay | All payments — Monthly, Yearly, Lifetime |
+| Stripe | Payouts (connected via ExtensionPay) |
 | Chrome Web Store | Distribution |
