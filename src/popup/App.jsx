@@ -97,12 +97,13 @@ export default function App() {
       </div>
 
       {/* Session list */}
-      <div className="flex-1 overflow-y-auto px-4 py-2">
+      <div className="flex-1 overflow-y-auto thin-scrollbar px-4 py-2">
         <SessionList
           sessions={filtered}
           loading={loading}
           isPaid={isPaid}
           inTrial={inTrial}
+          isFiltered={!!(query.trim() || (activeFolder !== 'All'))}
           onRestore={restoreSession}
           onDelete={deleteSession}
           onUpdate={updateSession}

@@ -24,3 +24,14 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Hide scrollbars but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Thin custom scrollbar for session list */
+.thin-scrollbar::-webkit-scrollbar { width: 3px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-zinc-200 dark:bg-zinc-700 rounded-full;
+}

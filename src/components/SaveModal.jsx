@@ -8,9 +8,9 @@ export default function SaveModal({ folders, isPaid, inTrial, onSave, onClose })
   useEffect(() => {
     const defaultName = `Session — ${new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
     setName(defaultName)
-    chrome.tabs.query({ currentWindow: true }).then((tabs) => {
-      setTabCount(tabs.filter((t) => t.url && !t.url.startsWith('chrome://')).length)
-    })
+    chrome.tabs.query({ currentWindow: true })
+      .then((tabs) => setTabCount(tabs.filter((t) => t.url && !t.url.startsWith('chrome://')).length))
+      .catch((e) => console.error('tabs.query error:', e))
   }, [])
 
   const canPickFolder = isPaid || inTrial
