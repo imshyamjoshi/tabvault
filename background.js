@@ -1,3 +1,8 @@
+importScripts('ExtPay.js')
+
+const extpay = ExtPay('tabvaultwithai')
+extpay.startBackground()
+
 chrome.runtime.onInstalled.addListener(async () => {
   const result = await chrome.storage.local.get('installDate')
   if (!result.installDate) {
@@ -66,27 +71,43 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
       })
       .catch(() => sendResponse({ valid: false, message: 'Could not verify key. Check your connection.' }))
-    return true // keep message channel open for async response
-  }
-
-  if (message.type === 'RESTORE_PURCHASE') {
-    chrome.storage.local.get('isPaid').then(({ isPaid }) => {
-      sendResponse({ isPaid: !!isPaid })
-    })
     return true
   }
 
   if (message.type === 'CHECK_PAYMENT') {
-    // ExtensionPay will be wired here on Day 5 once API key is available.
-    // Until then, fall back to local storage cache.
-    chrome.storage.local.get('isPaid').then(({ isPaid }) => {
-      sendResponse({ isPaid: !!isPaid })
-    })
+    extpay.getUser()
+      .then((user) => {
+        if (user.paid) {
+          chrome.storage.local.set({ isPaid: true })
+        }
+        sendResponse({ isPaid: user.paid })
+      })
+      .catch(() => {
+        chrome.storage.local.get('isPaid').then(({ isPaid }) => {
+          sendResponse({ isPaid: !!isPaid })
+        })
+      })
+    return true
+  }
+
+  if (message.type === 'RESTORE_PURCHASE') {
+    extpay.getUser()
+      .then((user) => {
+        if (user.paid) {
+          chrome.storage.local.set({ isPaid: true })
+        }
+        sendResponse({ isPaid: user.paid })
+      })
+      .catch(() => {
+        chrome.storage.local.get('isPaid').then(({ isPaid }) => {
+          sendResponse({ isPaid: !!isPaid })
+        })
+      })
     return true
   }
 
   if (message.type === 'OPEN_PAYMENT_PAGE') {
-    // ExtensionPay payment page — wired on Day 5
+    extpay.openPaymentPage()
     sendResponse({})
     return true
   }
