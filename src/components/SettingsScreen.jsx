@@ -1,25 +1,28 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 export default function SettingsScreen({ isPaid, inTrial, daysRemaining, onBack, onUpgrade }) {
+  const [notice, setNotice] = useState(null) // { text, ok }
+
+  function showNotice(text, ok = true) {
+    setNotice({ text, ok })
+    setTimeout(() => setNotice(null), 3000)
+  }
+
   function handleManageSub() {
-    const extpay = window.ExtensionPay?.(import.meta.env.VITE_EXTENSIONPAY_KEY)
-    if (extpay) extpay.openPaymentPage()
+    chrome.runtime.sendMessage({ type: 'OPEN_PAYMENT_PAGE' })
   }
 
   async function handleRestorePurchase() {
     try {
-      const extpay = window.ExtensionPay?.(import.meta.env.VITE_EXTENSIONPAY_KEY)
-      if (extpay) {
-        const user = await extpay.getUser()
-        if (user.paid) {
-          await chrome.storage.local.set({ isPaid: true })
-          alert('Purchase restored!')
-        } else {
-          alert('No active subscription found.')
-        }
+      const response = await chrome.runtime.sendMessage({ type: 'RESTORE_PURCHASE' })
+      if (response?.isPaid) {
+        await chrome.storage.local.set({ isPaid: true })
+        showNotice('Purchase restored! Restart the popup to apply.', true)
+      } else {
+        showNotice('No active subscription found.', false)
       }
     } catch (e) {
-      alert('Could not restore purchase. Check your connection.')
+      showNotice('Could not restore purchase. Check your connection.', false)
     }
   }
 
@@ -68,6 +71,12 @@ export default function SettingsScreen({ isPaid, inTrial, daysRemaining, onBack,
         >
           Restore Purchase
         </button>
+
+        {notice && (
+          <p className={`text-xs text-center mt-1 ${notice.ok ? 'text-green-500' : 'text-red-500'}`}>
+            {notice.text}
+          </p>
+        )}
       </div>
     </div>
   )

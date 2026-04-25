@@ -7,15 +7,15 @@ export function usePaywall() {
   useEffect(() => {
     async function check() {
       try {
-        const extpay = window.ExtensionPay?.(import.meta.env.VITE_EXTENSIONPAY_KEY)
-        if (extpay) {
-          const user = await extpay.getUser()
-          setIsPaid(user.paid)
-          await storageSet({ isPaid: user.paid })
+        // Ask background to check ExtensionPay status
+        const response = await chrome.runtime.sendMessage({ type: 'CHECK_PAYMENT' })
+        if (response?.isPaid !== undefined) {
+          setIsPaid(response.isPaid)
+          await storageSet({ isPaid: response.isPaid })
           return
         }
       } catch (_) {}
-      // fallback to local cache
+      // Fallback to local cache if background doesn't respond
       const { isPaid: cached = false } = await storageGet('isPaid')
       setIsPaid(cached)
     }
