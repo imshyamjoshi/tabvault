@@ -1,28 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { PRICING } from '../utils/pricing.js'
-import { validateGumroadKey } from '../utils/license.js'
 
 export default function UpgradeModal({ onClose }) {
-  const [licenseKey, setLicenseKey] = useState('')
-  const [keyStatus, setKeyStatus] = useState(null) // null | 'loading' | 'error' | 'success'
-  const [keyError, setKeyError] = useState('')
-
-  async function handleValidateKey() {
-    if (!licenseKey.trim()) return
-    setKeyStatus('loading')
-    const result = await validateGumroadKey(licenseKey.trim())
-    if (result.valid) {
-      setKeyStatus('success')
-      setTimeout(onClose, 1200)
-    } else {
-      setKeyStatus('error')
-      setKeyError(result.message)
-    }
-  }
-
-  function handleExtPay(plan) {
-    const extpay = window.ExtensionPay?.(import.meta.env.VITE_EXTENSIONPAY_KEY)
-    if (extpay) extpay.openPaymentPage()
+  function handleUpgrade() {
+    chrome.runtime.sendMessage({ type: 'OPEN_PAYMENT_PAGE' })
+    onClose()
   }
 
   return (
@@ -30,60 +12,46 @@ export default function UpgradeModal({ onClose }) {
       <div className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <h2 className="font-semibold text-base">Upgrade TabVault</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2 px-4">
           <PlanCard
             name="Monthly"
-            priceINR={`₹${PRICING.INR.monthly}/mo`}
-            priceUSD={`$${PRICING.USD.monthly}/mo`}
-            onClick={() => handleExtPay('monthly')}
+            price={`$${PRICING.monthly.launch}/mo`}
+            note={`$${PRICING.monthly.later}/mo later`}
+            onClick={handleUpgrade}
           />
           <PlanCard
             name="Yearly"
-            priceINR={`₹${PRICING.INR.yearly}/yr`}
-            priceUSD={`$${PRICING.USD.yearly}/yr`}
+            price={`$${PRICING.yearly.launch}/yr`}
+            note={`$${PRICING.yearly.later}/yr later`}
             highlight
-            onClick={() => handleExtPay('yearly')}
+            onClick={handleUpgrade}
           />
           <PlanCard
             name="Lifetime"
-            priceINR={`₹${PRICING.INR.lifetime}`}
-            priceUSD={`$${PRICING.USD.lifetime}`}
-            onClick={() => handleExtPay('lifetime')}
+            price={`$${PRICING.lifetime.launch}`}
+            note={`$${PRICING.lifetime.later} later`}
+            onClick={handleUpgrade}
           />
         </div>
 
-        <div className="px-4 pt-4 pb-5">
-          <p className="text-xs text-zinc-400 mb-2">Have a lifetime license key?</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={licenseKey}
-              onChange={(e) => { setLicenseKey(e.target.value); setKeyStatus(null) }}
-              placeholder="Enter license key"
-              className="flex-1 px-3 py-2 text-sm rounded-lg bg-zinc-100 dark:bg-zinc-800 outline-none focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-600"
-            />
-            <button
-              onClick={handleValidateKey}
-              disabled={keyStatus === 'loading' || keyStatus === 'success'}
-              className="px-3 py-2 text-sm rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {keyStatus === 'loading' ? '...' : keyStatus === 'success' ? '✓' : 'Apply'}
-            </button>
-          </div>
-          {keyStatus === 'error' && <p className="text-xs text-red-500 mt-1">{keyError}</p>}
-          {keyStatus === 'success' && <p className="text-xs text-green-500 mt-1">License activated!</p>}
+        <div className="px-4 pt-3 pb-5">
+          <p className="text-xs text-center text-zinc-400">
+            Early bird pricing · All plans include unlimited sessions, folders, reminders, search & export
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-function PlanCard({ name, priceINR, priceUSD, highlight, onClick }) {
+function PlanCard({ name, price, note, highlight, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -94,8 +62,8 @@ function PlanCard({ name, priceINR, priceUSD, highlight, onClick }) {
       }`}
     >
       <span className="text-xs font-medium mb-1">{name}</span>
-      <span className="text-sm font-bold">{priceINR}</span>
-      <span className={`text-xs mt-0.5 ${highlight ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'}`}>{priceUSD}</span>
+      <span className="text-sm font-bold">{price}</span>
+      <span className={`text-[10px] mt-0.5 ${highlight ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'}`}>{note}</span>
     </button>
   )
 }

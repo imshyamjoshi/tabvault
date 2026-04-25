@@ -1,4 +1,5 @@
 export const PRICING = {
-  INR: { monthly: 149, yearly: 999, lifetime: 799 },
-  USD: { monthly: 1.99, yearly: 11.99, lifetime: 9.99 },
+  monthly:  { launch: 0.99,  later: 1.99  },
+  yearly:   { launch: 5.99,  later: 11.99 },
+  lifetime: { launch: 4.99,  later: 9.99  },
 }

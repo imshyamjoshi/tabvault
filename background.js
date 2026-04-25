@@ -50,30 +50,6 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 })
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type === 'VALIDATE_LICENSE') {
-    const { licenseKey, permalink } = message
-    fetch('https://api.gumroad.com/v2/licenses/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ product_permalink: permalink, license_key: licenseKey }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          chrome.storage.local.set({
-            isPaid: true,
-            paidSince: new Date().toISOString(),
-            licenseKey,
-          })
-          sendResponse({ valid: true })
-        } else {
-          sendResponse({ valid: false, message: 'Invalid license key' })
-        }
-      })
-      .catch(() => sendResponse({ valid: false, message: 'Could not verify key. Check your connection.' }))
-    return true
-  }
-
   if (message.type === 'CHECK_PAYMENT') {
     extpay.getUser()
       .then((user) => {
