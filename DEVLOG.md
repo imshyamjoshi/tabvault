@@ -105,6 +105,51 @@ All Days 2–4 features were scaffolded in Day 1. This pass fixed 3 rule violati
 - `VALIDATE_LICENSE` posts to Gumroad API with permalink `bxiocl`
 - `.env` updated with both keys (gitignored)
 
-## Day 6 — (upcoming) Polish, Search, Export
+## Day 6 — v2 Feature Build
+**Date:** 2026-04-25
+**Status:** Complete ✓
+
+### What was built
+
+**New utilities**
+- `src/utils/smartName.js` — auto-generates session name: BRAND_MAP for domain-dominant sessions (>50% same host), then most common non-stopword across tab titles (>=2 hits), fallback to time string
+- `src/utils/templates.js` — 4 default session templates: Morning Routine, Dev Setup, Research Mode, Social Check
+
+**New hooks**
+- `src/hooks/useBadge.js` — updates extension icon badge count (non-auto-save sessions only)
+- `src/hooks/useAutoSave.js` — manages auto-save prefs (interval/midnight/onClose) in storage, sends UPDATE_AUTOSAVE to background
+- `src/hooks/useTheme.js` — system/light/dark theme, applies `dark` class before first paint via storage read in main.jsx
+- `src/hooks/useDuplicateCheck.js` — given a tab list, returns which URLs already exist in another session
+
+**New components**
+- `src/components/SwitchConfirm.jsx` — bottom-sheet confirmation before switching sessions (shows current tab count, session name)
+- `src/components/TemplatePicker.jsx` — bottom-sheet with 4 default templates to start a session from
+- `src/components/ImportExport.jsx` — export all sessions as .json, import from .json (Pro gated)
+
+**Updated files**
+- `src/utils/session.js` — createSession() now includes `note`, `isAutoSave`, `isTemplate` fields
+- `src/hooks/useSessions.js` — saveSession() accepts `note`/`isAutoSave` args; new `switchSession()` saves pre-switch snapshot then closes current tabs and opens saved session
+- `src/hooks/useSearch.js` — searches `note` field; handles `Auto-saves` virtual folder filter; `All` tab excludes auto-saves
+- `src/components/SaveModal.jsx` — smart name via generateSmartName(), note input, duplicate warning (amber banner)
+- `src/components/SessionCard.jsx` — note preview (italic, truncated), inline note editing, `Switch to` action button, SwitchConfirm wired, auto-save badge tag
+- `src/components/SessionList.jsx` — passes `onSwitch` through to SessionCard
+- `src/components/FolderTabs.jsx` — adds `Auto-saves` as built-in second tab
+- `src/components/SettingsScreen.jsx` — v2 redesign: account section, theme picker (system/light/dark toggle), auto-save config (interval select + midnight/onClose toggles), keyboard shortcuts info, import/export button
+- `src/popup/App.jsx` — wires all new hooks (useBadge, useAutoSave, useTheme), passes new props to SettingsScreen/SaveModal/SessionList, handleImport function
+- `src/popup/main.jsx` — reads saved theme from storage before first render to avoid flash
+- `public/manifest.json` — v2.0.0, added `commands` permission + `save-session` (Ctrl+Shift+S) and `restore-last` (Ctrl+Shift+R) shortcut definitions
+
+**background.js v2**
+- `setupAutoSaveAlarms()` — creates `autosave-interval` and `autosave-midnight` alarms based on stored prefs
+- `autoSaveCurrentTabs(label)` — saves all open windows' tabs with isAutoSave:true, trims old snapshots (5 interval, 7 midnight)
+- `chrome.commands.onCommand` — handles `save-session` and `restore-last` keyboard shortcuts (Pro only)
+- `chrome.runtime.onSuspend` — best-effort on-close save if `onClose` pref is enabled
+- `UPDATE_AUTOSAVE` message handler — saves prefs and calls setupAutoSaveAlarms()
+
+### Decisions
+- Auto-saves shown in dedicated `Auto-saves` folder tab, hidden from `All` to keep main list clean
+- Switch session saves a pre-switch snapshot automatically so no tabs are ever lost
+- Badge count excludes auto-saves (shows intentional sessions only)
+- Import merges by ID — existing sessions are not overwritten, only new ones prepended
 
 ## Day 7 — (upcoming) Chrome Web Store Submission
