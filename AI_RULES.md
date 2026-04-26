@@ -42,15 +42,46 @@
 
 - This extension uses **Manifest V3** — never use Manifest V2 patterns.
 - Use `chrome.tabs.query` to read open tabs — never assume tab data.
-- Use `chrome.alarms` for reminders — never use `setTimeout` for anything longer than a few seconds.
-- Use `chrome.notifications` for system-level reminder alerts.
+- Use `chrome.alarms` for reminders and nightly auto-save — never use `setTimeout` for anything longer than a few seconds.
+- Use `chrome.notifications` for system-level reminder and shortcut alerts.
+- Use `chrome.commands` for keyboard shortcuts — defined in `manifest.json` under `commands`.
+- Use `chrome.action.setBadgeText()` to update the extension icon badge count.
 - All permissions must be declared in `manifest.json` before use.
+- Required permissions: `tabs`, `storage`, `alarms`, `notifications`, `commands`.
 - Content scripts are not needed for this extension — do not create them.
 - The background script is a **service worker** — it has no DOM access.
 
 ---
 
-## 5. Trial & Paywall Rules
+## 5. Auto-Save Rules
+
+- Auto-save has 3 independent triggers — all managed in `background.js`:
+  - **Interval** — user-configured via `autoSave.intervalMinutes` (15/30/60/240/null)
+  - **Midnight** — fixed nightly alarm, enabled via `autoSave.midnightEnabled`
+  - **On close** — `chrome.runtime.onSuspend`, enabled via `autoSave.onCloseEnabled` (best effort only)
+- Interval snapshots: keep last 5, prune oldest automatically.
+- Nightly snapshots: keep last 7, prune oldest automatically.
+- All auto-saves have `isAutoSave: true` and live in a locked "Auto-saves" folder.
+- Auto-save is a paid feature — check `isPaid` before creating alarms.
+- Never show notifications for auto-saves — fully silent.
+- When user changes interval setting → cancel old interval alarm → create new one.
+
+## 6. Import / Export Rules
+
+- Export format is **JSON only** — never plain text or CSV.
+- Exported filename format: `tabvault-export-YYYY-MM-DD.json`
+- Export includes full session objects: id, name, folder, note, tabs, createdAt, reminder.
+- On import: validate JSON structure before merging — reject malformed files with an error message.
+- On import: skip sessions with duplicate IDs — never overwrite existing sessions.
+- Import and export are paid features — gate behind `isPaid`.
+
+## 7. Theme Rules
+
+- Default theme is `'system'` — follows `prefers-color-scheme` media query.
+- Theme preference saved to `chrome.storage.local` as `theme: 'system' | 'light' | 'dark'`.
+- Theme applied by toggling the `dark` class on the root `<html>` element.
+- `useTheme` hook handles all theme logic — never apply theme classes directly in components.
+- Tailwind must be configured with `darkMode: 'class'` in `tailwind.config.js`.
 
 - Install date is stored in `chrome.storage.local` as `installDate` (ISO string) on first run.
 - Trial duration is **7 days** from `installDate`.
@@ -63,7 +94,12 @@
   - No reminders
   - No search
   - No export
-  - No sync
+  - No notes
+  - No one-click session switch
+  - No auto-save nightly snapshots
+  - No keyboard shortcuts (shortcuts fire but show upgrade prompt)
+  - No session templates
+  - Duplicate detection is **free** — available to all users
 - Locked features must be **visible but greyed out** with an upgrade CTA — never hidden entirely.
 - The upgrade modal must always show all 3 plans: Monthly, Yearly, Lifetime.
 
@@ -94,16 +130,21 @@
 - Session object shape:
   ```js
   {
-    id: string,          // uuid
-    name: string,        // user-given name
-    folder: string,      // folder name or 'default'
+    id: string,           // uuid v4
+    name: string,         // user-given or smart auto-generated name
+    folder: string,       // folder name or 'default'
+    note: string,         // optional note, default: ''
+    isAutoSave: boolean,  // true if created by nightly auto-save
+    isTemplate: boolean,  // true if saved as a template
     tabs: [{ title, url, favIconUrl }],
-    createdAt: string,   // ISO date
+    createdAt: string,    // ISO date
     reminder: string | null  // ISO date or null
   }
   ```
 - Never mutate session objects directly — always create a new copy.
 - Always validate data shape before saving to storage.
+- Auto-saves are stored in sessions[] with isAutoSave=true — never more than 7 at a time.
+- Templates are stored in a separate `templates[]` key in storage.
 
 ---
 

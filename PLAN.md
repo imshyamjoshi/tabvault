@@ -5,7 +5,7 @@
 ## Overview
 
 **Goal:** Build, monetize, and ship TabVault to the Chrome Web Store in 7 days.
-**Stack:** React + Vite + Tailwind + Chrome Extension APIs + ExtensionPay + Gumroad
+**Stack:** React + Vite + Tailwind + Chrome Extension APIs + ExtensionPay
 **Monetization:** 7-day free trial → freemium paywall → Monthly / Yearly / Lifetime plans
 
 ---
@@ -58,17 +58,19 @@ Extension icon appears in Chrome. Clicking it shows a list of currently open tab
 ### Tasks
 - [ ] Create `src/utils/storage.js` — helpers for chrome.storage.local read/write
 - [ ] Create `src/utils/session.js` — Session shape, uuid generation, validation
+- [ ] Create `src/utils/smartName.js` — auto-generate session name from tab titles
 - [ ] Create `src/hooks/useSessions.js` — load, save, delete sessions from storage
-- [ ] Create `src/components/SaveModal.jsx` — name input + confirm button
-- [ ] Create `src/components/SessionCard.jsx` — session name, tab count, restore/delete buttons
+- [ ] Create `src/hooks/useDuplicateCheck.js` — detect duplicate tabs across sessions
+- [ ] Create `src/components/SaveModal.jsx` — name input, note input, folder picker, duplicate warning
+- [ ] Create `src/components/SessionCard.jsx` — session name, tab count, note preview, restore/switch/delete buttons
 - [ ] Create `src/components/SessionList.jsx` — renders list of SessionCards
-- [ ] Wire "Save All Tabs" button → opens SaveModal → saves to storage
+- [ ] Wire "Save All Tabs" button → smart name generated → opens SaveModal → saves to storage
 - [ ] Wire "Restore" button → opens all tabs from session in new window
 - [ ] Wire "Delete" button → confirmation step → removes from storage
 - [ ] Test: save 5 sessions, close browser, reopen, restore a session
 
 ### Done when
-User can save tabs, name the session, see it in the list, restore it, and delete it.
+User can save tabs with smart name and note, see sessions in list, restore, and delete.
 
 ---
 
@@ -97,24 +99,38 @@ Changing installDate simulates trial expiry correctly. Free tier limits engage. 
 
 ---
 
-## Day 4 — Folders & Reminders (Paid Features)
+## Day 4 — Paid Features (Folders, Reminders, Switch, Auto-Save, Import/Export, Theme)
 
-**Goal:** Folders and reminders built and gated behind paywall.
+**Goal:** All paid features built and gated behind paywall.
 
 ### Tasks
 - [ ] Create `src/hooks/useFolders.js` — CRUD for folders in chrome.storage
-- [ ] Create `src/components/FolderTabs.jsx` — tab bar for All / folder names
+- [ ] Create `src/components/FolderTabs.jsx` — tab bar for All / Auto-saves / folder names
 - [ ] Add folder picker to `SaveModal.jsx`
 - [ ] Filter `SessionList` by selected folder tab
 - [ ] Create `src/components/ReminderPicker.jsx` — date + time input
 - [ ] Wire reminder to session in storage
+- [ ] Create `src/components/SwitchConfirm.jsx` — confirm dialog before switching sessions
+- [ ] Wire "Switch to" button → SwitchConfirm → close current tabs → open session tabs → auto-save pre-switch snapshot
+- [ ] Create `src/hooks/useBadge.js` — updates extension icon badge with session count
+- [ ] Create `src/hooks/useAutoSave.js` — reads/writes autoSave prefs, manages alarms
+- [ ] Create `src/hooks/useTheme.js` — reads theme pref, applies dark/light class to root element
+- [ ] Create `src/components/ImportExport.jsx`
+  - Export: serialize sessions to JSON → download as .json file
+  - Import: file picker → parse JSON → validate → merge into storage
 - [ ] Update `background.js`:
-  - On `chrome.alarms.onAlarm` → read session from storage → `chrome.notifications.create()`
-  - On `chrome.notifications.onClicked` → open all session tabs
-- [ ] Gate folders + reminders behind `isPaid` — show locked UI with upgrade CTA for free users
+  - Interval auto-save alarm — fires based on user's intervalMinutes setting
+  - Nightly auto-save alarm — fires at midnight, keeps last 7 daily snapshots
+  - Best-effort on-close save via `chrome.runtime.onSuspend`
+  - Reminder alarms → `chrome.notifications.create()`
+  - `chrome.commands.onCommand` → handle save-session and restore-last shortcuts
+- [ ] Add `commands` permission to `manifest.json`
+- [ ] Create `src/utils/templates.js` — default template data
+- [ ] Create `src/components/TemplatePicker.jsx`
+- [ ] Gate all paid features behind `isPaid` — show locked UI with upgrade CTA
 
 ### Done when
-Paid users can assign sessions to folders and set reminders. Free users see locked versions with upgrade prompts.
+Session switch, all auto-save triggers, import/export, theme toggle, templates, badge, and shortcuts all working. All correctly gated for free users.
 
 ---
 
@@ -147,26 +163,38 @@ Clicking upgrade opens ExtensionPay checkout. Payment completes. Features unlock
 
 ---
 
-## Day 6 — Polish, Search & Export
+## Day 6 — Polish, Search & Final Testing
 
 **Goal:** Production-quality UI. All screens complete and smooth.
 
 ### Tasks
-- [ ] Create `src/hooks/useSearch.js` — filter sessions by name/URL in real time
+- [ ] Create `src/hooks/useSearch.js` — filter sessions by name, note, URL in real time
 - [ ] Create `src/components/SearchBar.jsx` — gated for paid users
-- [ ] Add export feature to SessionCard — copy URLs to clipboard or download .txt
-- [ ] Create `src/components/SettingsScreen.jsx`
-  - Show trial status / paid status
-  - Link to manage subscription (ExtensionPay portal)
+- [ ] Update `src/components/SettingsScreen.jsx`:
+  - Trial status / paid status / plan type
+  - Auto-save config: interval picker, midnight toggle, on-close toggle
+  - Theme selector: Follow System / Light / Dark
+  - Keyboard shortcut reference
+  - Manage subscription link (ExtensionPay portal)
   - Restore purchases button
+  - Import / Export section
 - [ ] Add skeleton loaders for all storage reads
 - [ ] Add empty state for zero sessions ("Save your first session →")
+- [ ] Add note preview on SessionCard — truncated to 1 line
+- [ ] Test theme: switch between system / light / dark — verify applies instantly
+- [ ] Test auto-save interval by setting to 15 mins and waiting
+- [ ] Test midnight alarm by manually triggering in background.js
+- [ ] Test on-close save via chrome.runtime.onSuspend
+- [ ] Test import: export a session → delete it → re-import → verify restored
+- [ ] Test export: download JSON → verify valid format → re-importable
+- [ ] Test keyboard shortcuts end to end
+- [ ] Test session switch — verify pre-switch snapshot saves correctly
+- [ ] Test duplicate detection in SaveModal
 - [ ] Polish all screens — consistent spacing, colors, icons
-- [ ] Test on Chrome with real tabs — check all flows end to end
-- [ ] Test free tier limits feel correct — not too punishing, not too generous
+- [ ] Test free tier limits — not too punishing, not too generous
 
 ### Done when
-Extension looks and feels production-ready. All flows tested. No blank screens or layout breaks.
+All features tested. Extension looks and feels production-ready. No blank screens or layout breaks.
 
 ---
 
@@ -184,11 +212,10 @@ Extension looks and feels production-ready. All flows tested. No blank screens o
   - [ ] Long description: features list, trial info, pricing
   - [ ] Privacy policy URL (host a simple one on GitHub Pages or Notion)
 - [ ] Submit to Chrome Web Store developer dashboard
-- [ ] Set up Gumroad product page with pricing and description
 - [ ] Review usually takes 1–3 business days
 
 ### Done when
-Extension submitted. Gumroad product live. Waiting for Chrome review.
+Extension submitted. Waiting for Chrome review.
 
 ---
 
