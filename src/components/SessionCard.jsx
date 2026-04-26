@@ -1,13 +1,18 @@
 import React, { useState } from 'react'
 import { formatDate } from '../utils/session.js'
 import ReminderPicker from './ReminderPicker.jsx'
+import SwitchConfirm from './SwitchConfirm.jsx'
 
-export default function SessionCard({ session, isPaid, inTrial, onRestore, onDelete, onUpdate, onUpgrade, locked }) {
+export default function SessionCard({ session, isPaid, inTrial, onRestore, onDelete, onUpdate, onSwitch, onUpgrade, locked }) {
   const [expanded, setExpanded] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [newName, setNewName] = useState(session.name)
+  const [editingNote, setEditingNote] = useState(false)
+  const [noteVal, setNoteVal] = useState(session.note || '')
   const [showReminder, setShowReminder] = useState(false)
+  const [showSwitch, setShowSwitch] = useState(false)
+  const [currentTabCount, setCurrentTabCount] = useState(0)
   const [copied, setCopied] = useState(false)
 
   const canAct = isPaid || inTrial
@@ -22,6 +27,15 @@ export default function SessionCard({ session, isPaid, inTrial, onRestore, onDel
     } catch (e) {
       console.error('Export error:', e)
     }
+  }
+
+  async function handleSwitchClick() {
+    if (!canAct) { onUpgrade(); return }
+    try {
+      const tabs = await chrome.tabs.query({ currentWindow: true })
+      setCurrentTabCount(tabs.filter((t) => t.url && !t.url.startsWith('chrome://')).length)
+    } catch { setCurrentTabCount(0) }
+    setShowSwitch(true)
   }
 
   if (locked) {
@@ -71,7 +85,11 @@ export default function SessionCard({ session, isPaid, inTrial, onRestore, onDel
           <p className="text-xs text-zinc-400 mt-0.5">
             {session.tabs.length} tab{session.tabs.length !== 1 ? 's' : ''} · {formatDate(session.createdAt)}
             {session.reminder && <span className="ml-1">· ⏰</span>}
+            {session.isAutoSave && <span className="ml-1 text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-400 px-1 rounded">auto</span>}
           </p>
+          {session.note && !expanded && (
+            <p className="text-xs text-zinc-400 truncate mt-0.5 italic">"{session.note}"</p>
+          )}
         </div>
         <svg
           width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -84,6 +102,36 @@ export default function SessionCard({ session, isPaid, inTrial, onRestore, onDel
       {/* Expanded */}
       {expanded && (
         <div className="border-t border-zinc-100 dark:border-zinc-700/50">
+          {/* Note */}
+          {canAct && (
+            <div className="px-3 pt-2">
+              {editingNote ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={noteVal}
+                  onChange={(e) => setNoteVal(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      onUpdate(session.id, { note: noteVal })
+                      setEditingNote(false)
+                    }
+                  }}
+                  onBlur={() => { onUpdate(session.id, { note: noteVal }); setEditingNote(false) }}
+                  placeholder="Add a note…"
+                  className="w-full text-xs px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 outline-none"
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingNote(true)}
+                  className="w-full text-left text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 italic truncate"
+                >
+                  {session.note ? `"${session.note}"` : 'Add a note…'}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Tab list */}
           <div className="max-h-28 overflow-y-auto no-scrollbar px-3 py-1.5">
             {session.tabs.map((tab, i) => (
@@ -106,6 +154,7 @@ export default function SessionCard({ session, isPaid, inTrial, onRestore, onDel
           {/* Actions */}
           <div className="flex items-center flex-wrap gap-1 px-3 py-2 border-t border-zinc-100 dark:border-zinc-700/50">
             <ActionBtn onClick={() => onRestore(session)} label="Restore" />
+            <ActionBtn onClick={handleSwitchClick} label="Switch to" pro={!canAct} />
             <ActionBtn onClick={() => { setRenaming(true); setExpanded(true) }} label="Rename" />
             <ActionBtn
               onClick={() => canAct ? setShowReminder(true) : onUpgrade()}
@@ -135,6 +184,15 @@ export default function SessionCard({ session, isPaid, inTrial, onRestore, onDel
           current={session.reminder}
           onSet={(id, val) => onUpdate(id, { reminder: val })}
           onClose={() => setShowReminder(false)}
+        />
+      )}
+
+      {showSwitch && (
+        <SwitchConfirm
+          session={session}
+          currentTabCount={currentTabCount}
+          onConfirm={() => { setShowSwitch(false); onSwitch(session) }}
+          onCancel={() => setShowSwitch(false)}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import SessionCard from './SessionCard.jsx'
 
 const FREE_LIMIT = 3
 
-export default function SessionList({ sessions, loading, isPaid, inTrial, onRestore, onDelete, onUpdate, onUpgrade, isFiltered }) {
+export default function SessionList({ sessions, loading, isPaid, inTrial, onRestore, onDelete, onUpdate, onSwitch, onUpgrade, isFiltered }) {
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -41,6 +41,7 @@ export default function SessionList({ sessions, loading, isPaid, inTrial, onRest
           onRestore={onRestore}
           onDelete={onDelete}
           onUpdate={onUpdate}
+          onSwitch={onSwitch}
           onUpgrade={onUpgrade}
         />
       ))}

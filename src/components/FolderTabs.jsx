@@ -4,7 +4,7 @@ export default function FolderTabs({ folders, active, onSelect, isPaid, inTrial,
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const enabled = isPaid || inTrial
-  const all = ['All', ...folders]
+  const all = ['All', 'Auto-saves', ...folders]
 
   function handleAdd() {
     if (!enabled) { onUpgrade(); return }

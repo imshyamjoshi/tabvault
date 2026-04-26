@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 
-export function createSession(name, tabs, folder = 'default') {
+export function createSession(name, tabs, folder = 'default', note = '', isAutoSave = false, isTemplate = false) {
   return {
     id: uuidv4(),
     name: name.trim(),
@@ -8,6 +8,9 @@ export function createSession(name, tabs, folder = 'default') {
     tabs: tabs.map(({ title, url, favIconUrl }) => ({ title, url, favIconUrl })),
     createdAt: new Date().toISOString(),
     reminder: null,
+    note,
+    isAutoSave,
+    isTemplate,
   }
 }
 

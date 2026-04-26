@@ -11,27 +11,45 @@ import { useTrial } from '../hooks/useTrial.js'
 import { usePaywall } from '../hooks/usePaywall.js'
 import { useFolders } from '../hooks/useFolders.js'
 import { useSearch } from '../hooks/useSearch.js'
+import { useBadge } from '../hooks/useBadge.js'
+import { useAutoSave } from '../hooks/useAutoSave.js'
+import { useTheme } from '../hooks/useTheme.js'
 
 export default function App() {
-  const [screen, setScreen] = useState('main') // 'main' | 'settings'
+  const [screen, setScreen] = useState('main')
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [activeFolder, setActiveFolder] = useState('All')
 
-  const { sessions, saveSession, deleteSession, restoreSession, updateSession, loading } = useSessions()
+  const { sessions, saveSession, deleteSession, restoreSession, updateSession, switchSession, loading } = useSessions()
   const { inTrial, daysRemaining, trialExpired } = useTrial()
   const { isPaid } = usePaywall()
   const { folders, addFolder } = useFolders()
   const { query, setQuery, filtered } = useSearch(sessions, activeFolder)
+  const { prefs: autoSavePrefs, updatePrefs: updateAutoSave } = useAutoSave()
+  const { theme, setTheme } = useTheme()
+
+  useBadge(sessions)
 
   const canSave = isPaid || inTrial || sessions.length < 3
 
   function handleSaveClick() {
-    if (!canSave) {
-      setShowUpgrade(true)
-      return
-    }
+    if (!canSave) { setShowUpgrade(true); return }
     setShowSaveModal(true)
+  }
+
+  async function handleImport(imported) {
+    // Merge imported sessions with existing ones (imported sessions get prepended)
+    try {
+      const { sessions: current = [] } = await chrome.storage.local.get('sessions')
+      const existingIds = new Set(current.map((s) => s.id))
+      const newSessions = imported.filter((s) => !existingIds.has(s.id))
+      await chrome.storage.local.set({ sessions: [...newSessions, ...current] })
+      // Reload
+      window.location.reload()
+    } catch (e) {
+      console.error('Import error:', e)
+    }
   }
 
   if (screen === 'settings') {
@@ -41,12 +59,16 @@ export default function App() {
           isPaid={isPaid}
           inTrial={inTrial}
           daysRemaining={daysRemaining}
+          sessions={sessions}
           onBack={() => setScreen('main')}
           onUpgrade={() => setShowUpgrade(true)}
+          onImport={handleImport}
+          autoSavePrefs={autoSavePrefs}
+          onAutoSavePref={updateAutoSave}
+          theme={theme}
+          onTheme={setTheme}
         />
-        {showUpgrade && (
-          <UpgradeModal onClose={() => setShowUpgrade(false)} />
-        )}
+        {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
       </div>
     )
   }
@@ -112,6 +134,7 @@ export default function App() {
           onRestore={restoreSession}
           onDelete={deleteSession}
           onUpdate={updateSession}
+          onSwitch={switchSession}
           onUpgrade={() => setShowUpgrade(true)}
         />
       </div>
@@ -132,17 +155,16 @@ export default function App() {
           folders={folders}
           isPaid={isPaid}
           inTrial={inTrial}
-          onSave={async (name, folder) => {
-            await saveSession(name, folder)
+          sessions={sessions}
+          onSave={async (name, folder, note) => {
+            await saveSession(name, folder, note)
             setShowSaveModal(false)
           }}
           onClose={() => setShowSaveModal(false)}
         />
       )}
 
-      {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} />
-      )}
+      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
     </div>
   )
 }

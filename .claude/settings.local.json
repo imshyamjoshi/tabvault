@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "PowerShell(npm install *)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:extensionpay.com)",
+      "Bash(npm run *)"
     ]
   }
 }
